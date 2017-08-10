@@ -131,11 +131,9 @@ void __declspec(naked) _CIpow()
 	}
 }
 
-float fakeexp(float value)
+float expf(float value)
 {
-	// complete fake approximation, but the curves look close enough ^^
-	float result = 1.0f - pow(-value * 0.2f, 0.3f);
-	return result > 0.0f ? result : 0.0f;
+	return pow(2.71828f, value);
 }
 
 float rand(float f)
@@ -144,36 +142,40 @@ float rand(float f)
 	return f - (float)(int)f;
 }
 
-typedef short (*Instrument)(unsigned int frame, unsigned int frequency);
+typedef float (*Instrument)(unsigned int frame, unsigned int frequency);
 
-short silence(unsigned int frame, unsigned int period)
+float silence(unsigned int frame, unsigned int period)
 {
-    return 0;
+    return 0.0f;
 }
 
-#define SAW_VOLUME_DIVIDER 5
-short saw(unsigned int frame, unsigned int period)
+#define SAW_VOLUME_DIVIDER 5.0f
+float saw(unsigned int frame, unsigned int period)
 {
-    return (frame % period) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER
+	//return (fmod((float)frame, (float)period) / (float)period / SAW_VOLUME_DIVIDER) * 2.0f - 1.0f;
+	short out = (frame % period) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
+	return (float)out / 32768.0f;
 	     ;//+ (frame % (period + 1)) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
 }
 
 #define SAW2_VOLUME_DIVIDER 10
-short saw2(unsigned int frame, unsigned int period)
+float saw2(unsigned int frame, unsigned int period)
 {
     int adsr = (frame < 4096) ? 65535 - (frame << 4) : 0;
-    return (frame % period) * adsr / period / SAW2_VOLUME_DIVIDER - (adsr >> 1) / SAW2_VOLUME_DIVIDER;
+    short out = (frame % period) * adsr / period / SAW2_VOLUME_DIVIDER - (adsr >> 1) / SAW2_VOLUME_DIVIDER;
+	return (float)out / 32768.0f;
 }
 
 #define SQUARE_VOLUME_DIVIDER 12
-short square(unsigned int frame, unsigned int period)
+float square(unsigned int frame, unsigned int period)
 {
-    return ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
+	short out = ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
+	return (float)out / 32768.0f;
 }
 
-short kick(unsigned int frame, unsigned int period)
+float kick(unsigned int frame, unsigned int period)
 {
-	/*float e = fakeexp(-2.0f);
+	/*float e = expf(-2.0f);
 	return (short)e;
     int adsr = 65536;//(frame < 4096) ? 65535 - (frame << 4) : 0;
 	int offset = frame / 10000;
@@ -184,9 +186,9 @@ short kick(unsigned int frame, unsigned int period)
 	
 	float t = (float)frame;
 	float phase = TAU * t / (float)period;
-	float out = fakeexp(-t * 0.001f) * sin(phase * fakeexp(-t * 0.0002f));
+	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
 	
-    return (short)(out * 30000.0f);
+    return out;
 }
 
 /*#define KICK_VOLUME_DIVIDER 4
@@ -198,34 +200,34 @@ short stupidkick(unsigned int frame, unsigned int period)
     //return ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / KICK_VOLUME_DIVIDER;
 }*/
 
-#define SINE_VOLUME_DIVIDER 6
-short sine(unsigned int frame, unsigned int period)
+#define SINE_VOLUME_DIVIDER 6.0f
+float sine(unsigned int frame, unsigned int period)
 {
 	float phase = TAU * (float)frame / (float)period;
-	float adsr = fakeexp(-(float)frame * 0.001f);
+	float adsr = expf(-(float)frame * 0.001f);
 	float out = adsr * sin(phase);// + 0.2f * sin(phase * 1.1f);
-    return (short)(out * 32767.0f) / SINE_VOLUME_DIVIDER;
+    return out / SINE_VOLUME_DIVIDER;
 }
 
-#define REESE_VOLUME_DIVIDER 4
-short reese(unsigned int frame, unsigned int period)
+#define REESE_VOLUME_DIVIDER 4.0f
+float reese(unsigned int frame, unsigned int period)
 {
 	float detune = 1.01f;
 	float phase = TAU * (float)frame / (float)period;
 	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
 	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);
 	
-    return (short)(0.25f * out * 32767.0f) / REESE_VOLUME_DIVIDER;
+    return 0.25f * out / REESE_VOLUME_DIVIDER;
 }
 
-#define NOISE_VOLUME_DIVIDER 32
-short noise(unsigned int frame, unsigned int period)
+#define NOISE_VOLUME_DIVIDER 32.0f
+float noise(unsigned int frame, unsigned int period)
 {
 	float phase = TAU * (float)frame / (float)period;
-	float adsr = fakeexp(-phase * 0.01f);
+	float adsr = expf(-phase * 0.01f);
 	float out = adsr * rand(phase) * 2.0 - 1.0;
 	
-    return (short)(out * 32767.0f) / NOISE_VOLUME_DIVIDER;
+    return out / NOISE_VOLUME_DIVIDER;
 }
 
 Instrument instruments[] = {
@@ -958,7 +960,8 @@ static __forceinline void renderAudio()
                 
                 for (l = 0; l < TRACKER_PERIOD; l++)
                 {
-                    short s = (short)((int)instruments[channels[j].instrument & 0x0f](channels[j].frame, channels[j].period) * 3 / 4);
+					float sf = instruments[channels[j].instrument & 0x0f](channels[j].frame, channels[j].period) * 0.75f;
+                    short s = (short)((int)(sf * 32767.0f) * 3 / 4);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
                     
