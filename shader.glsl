@@ -13,11 +13,42 @@ float sphere(vec3 pos, float radius)
 	return length(pos)-radius;
 }
 
+float DE(vec3 pos, int iterations, float details, float power) 
+{
+	vec3 z = pos;
+	float dr = 1.0;
+	float r = 0.0;
+	for (int i = 0; i < iterations ; i++) {
+		r = length(z);
+		if (r>details) break;
+		
+		// convert to polar coordinates
+		float theta = acos(z.z/r);
+		float phi = atan(z.y,z.x);
+		dr =  pow(r, power -1.0)*power*dr + 1.0;
+		
+		// scale and rotate the point
+		float zr = pow(r,power);
+		theta = theta*power;
+		phi = phi*power;
+		
+		// convert back to cartesian coordinates
+		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z+=pos;
+	}
+	return 0.5*log(r)*r/dr;
+}
+
 float map(vec3 pos)
 {
-    pos.xy = rotate(pos.xy, _u[0] * 0.7);
-    pos.xz = rotate(pos.xz, _u[0]);
-    return sphere(pos,1.);
+	int iterations = 10;
+    float details = clamp(_u[0]*0.2,0.1,10.);
+    float bounces = 0.4;
+    float power = 20.;
+	
+    //pos.xy = rotate(pos.xy, _u[0] * 0.7);
+    //pos.xz = rotate(pos.xz, _u[0]);
+    return DE(pos*(abs(sin(_u[0]/bounces))*0.3+0.7),iterations,details,power);
 }
 
 vec3 normal(vec3 p)
