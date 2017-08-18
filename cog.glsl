@@ -48,9 +48,9 @@ float cog(vec3 pos)
 
 float cogs(vec3 pos)
 {
-    float instance = floor(pos.z / 4.0);
+    float instance = floor((pos.z + 2.0) / 4.0);
     pos.z = mod(pos.z + 2.0, 4.0) - 2.0;
-    pos.xy = rotate(pos.xy,  (rand(instance * 47.0) - 0.5) * iGlobalTime * 2.0);
+    pos.xy = rotate(pos.xy,  (rand(instance * 47.0) - 0.5) * iGlobalTime * 3.0);
     return cog(pos);
 }
 
@@ -59,7 +59,7 @@ float map(vec3 pos)
     //pos.xy = rotate(pos.xy, iGlobalTime * 0.7);
     //pos.yz = rotate(pos.yz, iGlobalTime);
     //return min(cogs(pos), -length(pos.xy) + 5.0);
-    return cogs(pos);
+    return min(5.0 - length(pos.xy), cogs(pos));
 }
 
 vec3 normal(vec3 p)
