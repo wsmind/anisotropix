@@ -141,5 +141,5 @@ void main(void)
 	// fade to black
 	color = mix(color, vec3(0.0), _u[1]);
 	
-	gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+	gl_FragColor = vec4(color, 1.0);
 }

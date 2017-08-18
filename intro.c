@@ -145,7 +145,7 @@ static float sfract(float f)
 static float rand(float f)
 {
 	f = sin(f * 12.9898) * 43758.5453;
-	return sfract(f);
+	return sfract(f) * 2.0f;
 }
 
 typedef float (*Instrument)(float t, float phase);
@@ -155,10 +155,35 @@ static float silence(float t, float phase)
     return 0.0f;
 }
 
-#define SAW_VOLUME_DIVIDER 5.0f
+static float kick(float t, float phase)
+{
+	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
+	out += expf(-t * 0.002f) * rand(phase);
+	
+    return out;
+}
+
 static float saw(float t, float phase)
 {
-	return sfract(phase / TAU) * 2.0f / SAW_VOLUME_DIVIDER;
+	return sfract(phase / TAU) * 2.0f * 0.2f;
+}
+
+static float lead(float t, float phase)
+{
+	/*float detune = 1.01f;
+	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
+	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);*/
+	
+	//float out = sin(phase * sin(t / 0.0000001f));
+	//float out = saw(t, phase + sin(phase * 1.12f) * t * 0.00001f);
+	
+	/*float detune = 1.01f - t * 0.0000002f;
+	float out = sin(phase + sin(phase * 1.12f) * t * 0.000001f) + sin(phase * detune + sin(phase * detune * 0.87f) * t * 0.000003f);*/
+	
+	float adsr = expf(-(float)t * 0.00001f);
+	float out = saw(t, phase + sin(phase * 4.0f) * t * 0.0001f) + saw(t, phase * 1.02f) * t * 0.00001f;
+	
+    return adsr * out * 0.5f;
 }
 
 #define SAW2_VOLUME_DIVIDER 10.0f
@@ -176,13 +201,6 @@ static float square(float t, float phase)
 	return adsr * out * 0.1f;
 }
 
-static float kick(float t, float phase)
-{
-	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
-	
-    return out;
-}
-
 #define SINE_VOLUME_DIVIDER 6.0f
 static float sine(float t, float phase)
 {
@@ -191,21 +209,20 @@ static float sine(float t, float phase)
     return out / SINE_VOLUME_DIVIDER;
 }
 
-#define REESE_VOLUME_DIVIDER 4.0f
 static float reese(float t, float phase)
 {
 	float detune = 1.01f;
 	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
 	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);
 	
-    return 0.25f * out / REESE_VOLUME_DIVIDER;
+    return 0.25f * out;
 }
 
 #define NOISE_VOLUME_DIVIDER 32.0f
 static float noise(float t, float phase)
 {
 	float adsr = expf(-phase * 0.01f);
-	float out = adsr * rand(phase) * 2.0;
+	float out = adsr * rand(phase);
 	
     return out / NOISE_VOLUME_DIVIDER;
 }
@@ -229,14 +246,8 @@ static float mangatome(float t, float phase)
 
 Instrument instruments[] = {
     /* 0 */ silence,
-    /* 1 */ saw,
-    /* 2 */ saw2,
-	/* 3 */ square,
-	/* 4 */ kick,
-	/* 5 */ sine,
-	/* 6 */ reese,
-	/* 7 */ noise,
-	mangatome
+    /* 1 */ kick,
+    /* 1 */ lead,
 };
 
 #define CHANNELS 8
@@ -278,87 +289,7 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0
     },
 	
-	// 1 - Mangatome
-	{
-        NOTE(37), 0xc8,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 2 - bass
-    {
-        NOTE(13), 0xc6,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(17), 0xc6,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(20), 0xc6,
-        0, 0
-    },
-	
-	// 3 - solo
-    {
-        NOTE(37), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0,
-        NOTE(41), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0,
-        NOTE(37), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0,
-        NOTE(41), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0
-    },
-	
-	// 4 - noise
-	{
-        NOTE(30), 0xe7,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 5 - note off
+	// 1 - note off
 	{
         NOTE(0), 0,
         0, 0,
@@ -378,9 +309,13 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0
     },
 	
-	// 6 - chords
-	{
-        NOTE(32), 0xe3,
+	// 2 - kick
+    {
+        NOTE(25), 0xc1,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(25), 0xc1,
         0, 0,
         0, 0,
         0, 0,
@@ -389,18 +324,13 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(34), 0xe3,
         0, 0,
         0, 0,
         0, 0
     },
 	
-	// 7 - chords2
-	{
-        NOTE(37), 0xe3,
+	// 3 - lead
+    {
         0, 0,
         0, 0,
         0, 0,
@@ -409,10 +339,11 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
+        NOTE(37), 0xc2,
         0, 0,
         0, 0,
         0, 0,
-        NOTE(41), 0xe3,
+        0, 0,
         0, 0,
         0, 0,
         0, 0
@@ -421,140 +352,14 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
 
 unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
 	// 0 - intro (32)
-    { 1, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-	
-	// 32 - bass
-    { 0, 2, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 0, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 4, 0, 0, 0, 0 },
-	
-	// 32 - happy
-    { 5, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 },
-    { 0, 2, 3, 6, 7, 0, 0, 0 }
-	
-	// 4 - black & white start (32)
-    /*{ 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 9, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 5, 7, 8, 0, 0, 0, 0 },
-	
-	// 36 - blue! (32)
-    { 4, 6, 7, 8, 2, 0, 0, 20 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 9, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 5, 7, 8, 2, 0, 0, 0 },
-	
-	// 68 - balls (32)
-    { 4, 6, 7, 8, 2, 10, 0, 21 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 9, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 5, 7, 8, 2, 10, 0, 22 },
-	
-	// 100 - more balls! (32)
-    { 4, 6, 7, 8, 2, 10, 0, 21 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 9, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 21 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 6, 7, 8, 2, 10, 0, 0 },
-    { 4, 11, 7, 8, 2, 10, 0, 22 },
-	
-	// 132 - fire from hell (32)
-    { 17, 12, 15, 18, 13, 0, 0, 20 },
-    { 17, 12, 16, 18, 14, 0, 0, 0 },
-    { 17, 12, 15, 18, 13, 0, 0, 0 },
-    { 17, 12, 16, 18, 14, 19, 0, 0 },
-    { 17, 12, 15, 18, 13, 0, 0, 0 },
-    { 17, 12, 16, 18, 14, 0, 0, 21 },
-    { 17, 12, 15, 18, 13, 0, 0, 0 },
-    { 17, 12, 16, 18, 14, 19, 0, 0 },
-	
-	// 164 - more fire (32)
-    { 17, 12, 15, 18, 13, 00, 25, 20 },
-    { 17, 12, 16, 18, 14, 00, 0, 00 },
-    { 17, 12, 15, 18, 13, 00, 0, 21 },
-    { 17, 12, 16, 18, 14, 19, 0, 00 },
-    { 17, 12, 15, 18, 13, 00, 25, 20 },
-    { 17, 12, 16, 18, 14, 00, 0, 21 },
-    { 17, 12, 15, 18, 13, 00, 0, 00 },
-    { 1, 12, 16, 18, 14, 19, 20, 22 },
-	
-	// 196 - craziness (32)
-    { 1, 23, 7, 8, 2, 10, 22, 21 },
-    { 3, 24, 7, 8, 2, 10, 22, 0 },
-    { 4, 6, 7, 8, 2, 10, 22, 0 },
-    { 1, 6, 7, 8, 2, 10, 22, 0 },
-    { 3, 26, 7, 8, 2, 10, 22, 21 },
-    { 1, 27, 7, 8, 2, 10, 22, 0 },
-    { 4, 6, 7, 8, 2, 10, 22, 0 },
-    { 3, 9, 7, 8, 2, 10, 22, 0 },
-	
-	// 228 - craziness (32)
-    { 3, 23, 7, 8, 2, 10, 2, 20 },
-    { 1, 24, 7, 8, 2, 10, 22, 0 },
-    { 4, 6, 7, 8, 2, 10, 22, 21 },
-    { 3, 6, 7, 8, 2, 10, 22, 19 },
-    { 1, 26, 7, 8, 2, 10, 22, 0 },
-    { 4, 27, 7, 8, 2, 10, 22, 21 },
-    { 3, 6, 7, 8, 2, 10, 22, 0 },
-    { 1, 11, 5, 8, 2, 10, 22, 19 },
-	
-	// 260 - back to the roots, but crazy (32) - greets?
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 9, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
-    { 4, 5, 7, 8, 0, 0, 0, 0 },
-	
-	// 292 - blue again! (32)
-    { 4, 6, 7, 8, 2, 0, 0, 20 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 9, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 6, 7, 8, 2, 0, 0, 0 },
-    { 4, 5, 7, 8, 2, 0, 0, 0 },
-	
-	// 324 - end
-    { 0, 6, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 }*/
+    { 2, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 3, 0, 0, 0, 0, 0, 0 },
+    { 2, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 3, 0, 0, 0, 0, 0, 0 },
+    { 2, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 3, 0, 0, 0, 0, 0, 0 },
+    { 2, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 3, 0, 0, 0, 0, 0, 0 }
 };
 
 static __forceinline void renderAudio()
