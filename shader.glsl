@@ -42,9 +42,9 @@ float DE(vec3 pos, int iterations, float details, float power)
 float map(vec3 pos)
 {
 	int iterations = 10;
-    float details = clamp(_u[0]*0.2,0.1,10.);
+    float details = smoothstep(10.,20.,_u[0])*2.;
     float bounces = 0.4;
-    float power = 20.;
+    float power = 10.;
 	
     //pos.xy = rotate(pos.xy, _u[0] * 0.7);
     //pos.xz = rotate(pos.xz, _u[0]);
