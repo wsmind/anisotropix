@@ -46,8 +46,8 @@ float map(vec3 pos)
     float bounces = 0.4;
     float power = 10.;
 	
-    //pos.xy = rotate(pos.xy, _u[0] * 0.7);
-    //pos.xz = rotate(pos.xz, _u[0]);
+    pos.xy = rotate(pos.xy, _u[0] * 0.7);
+    pos.xz = rotate(pos.xz, _u[0]);
     return DE(pos*(abs(sin(_u[0]/bounces))*0.3+0.7),iterations,details,power);
 }
 
