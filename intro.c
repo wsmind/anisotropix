@@ -131,17 +131,17 @@ void __declspec(naked) _CIpow()
 	}
 }
 
-float expf(float value)
+static float expf(float value)
 {
 	return pow(2.71828f, value);
 }
 
-float fract(float f)
+static float fract(float f)
 {
 	return f - (float)(int)f;
 }
 
-float rand(float f)
+static float rand(float f)
 {
 	f = sin(f * 12.9898) * 43758.5453;
 	return fract(f);
@@ -149,67 +149,40 @@ float rand(float f)
 
 typedef float (*Instrument)(float t, float phase);
 
-float silence(float t, float phase)
+static float silence(float t, float phase)
 {
     return 0.0f;
 }
 
 #define SAW_VOLUME_DIVIDER 5.0f
-float saw(float t, float phase)
+static float saw(float t, float phase)
 {
 	return (fract(phase / TAU) * 2.0f - 1.0f) / SAW_VOLUME_DIVIDER;
-	
-	//return (fmod((float)frame, (float)period) / (float)period / SAW_VOLUME_DIVIDER) * 2.0f - 1.0f;
-	//short out = (frame % period) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
-	//return (float)out / 32768.0f;
-	     //+ (frame % (period + 1)) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
 }
 
 #define SAW2_VOLUME_DIVIDER 10.0f
-float saw2(float t, float phase)
+static float saw2(float t, float phase)
 {
 	float adsr = expf(-(float)t * 0.001f);
 	return adsr * (fract(phase / TAU) * 2.0f - 1.0f) / SAW2_VOLUME_DIVIDER;
-	
-    /*int adsr = (frame < 4096) ? 65535 - (frame << 4) : 0;
-    short out = (frame % period) * adsr / period / SAW2_VOLUME_DIVIDER - (adsr >> 1) / SAW2_VOLUME_DIVIDER;
-	return (float)out / 32768.0f;*/
 }
 
 #define SQUARE_VOLUME_DIVIDER 12
-float square(float t, float phase)
+static float square(float t, float phase)
 {
 	short out = ((phase > 3.1415f) * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
 	return (float)out / 32768.0f;
 }
 
-float kick(float t, float phase)
+static float kick(float t, float phase)
 {
-	/*float e = expf(-2.0f);
-	return (short)e;
-    int adsr = 65536;//(frame < 4096) ? 65535 - (frame << 4) : 0;
-	int offset = frame / 10000;
-    period = 2048 + offset;
-	//frame += offset;
-    return (frame % period) * adsr / period / KICK_VOLUME_DIVIDER - (adsr >> 1) / KICK_VOLUME_DIVIDER;
-    //return ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / KICK_VOLUME_DIVIDER;*/
-	
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
 	
     return out;
 }
 
-/*#define KICK_VOLUME_DIVIDER 4
-short stupidkick(unsigned int frame, unsigned int period)
-{
-    int adsr = 65535;//(frame < 4096) ? 65535 - (frame << 4) : 0;
-    period = (frame < 4096) ? 1024 - (frame >> 2) : 1;
-    return (frame % period) * adsr / period / KICK_VOLUME_DIVIDER - (adsr >> 1) / KICK_VOLUME_DIVIDER;
-    //return ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / KICK_VOLUME_DIVIDER;
-}*/
-
 #define SINE_VOLUME_DIVIDER 6.0f
-float sine(float t, float phase)
+static float sine(float t, float phase)
 {
 	float adsr = expf(-(float)t * 0.001f);
 	float out = adsr * sin(phase);// + 0.2f * sin(phase * 1.1f);
@@ -217,7 +190,7 @@ float sine(float t, float phase)
 }
 
 #define REESE_VOLUME_DIVIDER 4.0f
-float reese(float t, float phase)
+static float reese(float t, float phase)
 {
 	float detune = 1.01f;
 	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
@@ -227,7 +200,7 @@ float reese(float t, float phase)
 }
 
 #define NOISE_VOLUME_DIVIDER 32.0f
-float noise(float t, float phase)
+static float noise(float t, float phase)
 {
 	float adsr = expf(-phase * 0.01f);
 	float out = adsr * rand(phase) * 2.0 - 1.0;
