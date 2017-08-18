@@ -136,44 +136,54 @@ float expf(float value)
 	return pow(2.71828f, value);
 }
 
-float rand(float f)
+float fract(float f)
 {
-	f = sin(f * 12.9898) * 43758.5453;
 	return f - (float)(int)f;
 }
 
-typedef float (*Instrument)(unsigned int frame, unsigned int frequency);
+float rand(float f)
+{
+	f = sin(f * 12.9898) * 43758.5453;
+	return fract(f);
+}
 
-float silence(unsigned int frame, unsigned int period)
+typedef float (*Instrument)(float t, float phase);
+
+float silence(float t, float phase)
 {
     return 0.0f;
 }
 
 #define SAW_VOLUME_DIVIDER 5.0f
-float saw(unsigned int frame, unsigned int period)
+float saw(float t, float phase)
 {
+	return (fract(phase / TAU) * 2.0f - 1.0f) / SAW_VOLUME_DIVIDER;
+	
 	//return (fmod((float)frame, (float)period) / (float)period / SAW_VOLUME_DIVIDER) * 2.0f - 1.0f;
-	short out = (frame % period) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
-	return (float)out / 32768.0f;
-	     ;//+ (frame % (period + 1)) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
+	//short out = (frame % period) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
+	//return (float)out / 32768.0f;
+	     //+ (frame % (period + 1)) * 65535 / period / SAW_VOLUME_DIVIDER - 32767 / SAW_VOLUME_DIVIDER;
 }
 
-#define SAW2_VOLUME_DIVIDER 10
-float saw2(unsigned int frame, unsigned int period)
+#define SAW2_VOLUME_DIVIDER 10.0f
+float saw2(float t, float phase)
 {
-    int adsr = (frame < 4096) ? 65535 - (frame << 4) : 0;
+	float adsr = expf(-(float)t * 0.001f);
+	return adsr * (fract(phase / TAU) * 2.0f - 1.0f) / SAW2_VOLUME_DIVIDER;
+	
+    /*int adsr = (frame < 4096) ? 65535 - (frame << 4) : 0;
     short out = (frame % period) * adsr / period / SAW2_VOLUME_DIVIDER - (adsr >> 1) / SAW2_VOLUME_DIVIDER;
-	return (float)out / 32768.0f;
+	return (float)out / 32768.0f;*/
 }
 
 #define SQUARE_VOLUME_DIVIDER 12
-float square(unsigned int frame, unsigned int period)
+float square(float t, float phase)
 {
-	short out = ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
+	short out = ((phase > 3.1415f) * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
 	return (float)out / 32768.0f;
 }
 
-float kick(unsigned int frame, unsigned int period)
+float kick(float t, float phase)
 {
 	/*float e = expf(-2.0f);
 	return (short)e;
@@ -184,8 +194,6 @@ float kick(unsigned int frame, unsigned int period)
     return (frame % period) * adsr / period / KICK_VOLUME_DIVIDER - (adsr >> 1) / KICK_VOLUME_DIVIDER;
     //return ((frame / (period >> 1)) & 1 * 2 - 1) * 32767 / KICK_VOLUME_DIVIDER;*/
 	
-	float t = (float)frame;
-	float phase = TAU * t / (float)period;
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
 	
     return out;
@@ -201,19 +209,17 @@ short stupidkick(unsigned int frame, unsigned int period)
 }*/
 
 #define SINE_VOLUME_DIVIDER 6.0f
-float sine(unsigned int frame, unsigned int period)
+float sine(float t, float phase)
 {
-	float phase = TAU * (float)frame / (float)period;
-	float adsr = expf(-(float)frame * 0.001f);
+	float adsr = expf(-(float)t * 0.001f);
 	float out = adsr * sin(phase);// + 0.2f * sin(phase * 1.1f);
     return out / SINE_VOLUME_DIVIDER;
 }
 
 #define REESE_VOLUME_DIVIDER 4.0f
-float reese(unsigned int frame, unsigned int period)
+float reese(float t, float phase)
 {
 	float detune = 1.01f;
-	float phase = TAU * (float)frame / (float)period;
 	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
 	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);
 	
@@ -221,9 +227,8 @@ float reese(unsigned int frame, unsigned int period)
 }
 
 #define NOISE_VOLUME_DIVIDER 32.0f
-float noise(unsigned int frame, unsigned int period)
+float noise(float t, float phase)
 {
-	float phase = TAU * (float)frame / (float)period;
 	float adsr = expf(-phase * 0.01f);
 	float out = adsr * rand(phase) * 2.0 - 1.0;
 	
@@ -960,7 +965,9 @@ static __forceinline void renderAudio()
                 
                 for (l = 0; l < TRACKER_PERIOD; l++)
                 {
-					float sf = instruments[channels[j].instrument & 0x0f](channels[j].frame, channels[j].period) * 0.75f;
+					float t = (float)channels[j].frame;
+					float phase = TAU * t / (float)channels[j].period;
+					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.75f;
                     short s = (short)((int)(sf * 32767.0f) * 3 / 4);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
