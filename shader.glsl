@@ -30,14 +30,14 @@ vec3 normal(vec3 p)
 	));
 }
 
-/*vec3 tonemap(vec3 color)
+vec3 tonemap(vec3 color)
 {
 	// rheinhard
 	color = color / (1.0 + color);	
 	// gamma
 	color = pow(color, vec3(1.0 / 2.2));	
 	return color;
-}*/
+}
 
 float lighting (vec3 norm)
 {
@@ -66,11 +66,11 @@ void main(void)
 		pos += dir * d;
 	}
 	
-	/*vec3 color = tonemap(color);
+	color = tonemap(color);
 	
 	// white flashes
-	float flash = exp(-mod(_u[0] - 4.0, 32.0) * 0.5);
+	/*float flash = exp(-mod(_u[0] - 4.0, 32.0) * 0.5);
 	color = mix(color, vec3(1.0), flash);*/
 	
-	gl_FragColor = vec4(pos,1.0);
+	gl_FragColor = vec4(color,1.0);
 }
