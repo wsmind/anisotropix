@@ -80,10 +80,10 @@ static PIXELFORMATDESCRIPTOR pfd = {
 
 #define TRACKER_PERIOD 4725 // 140 bpm (44100 * 60 / 140 / 4)
 #define TRACKER_PATTERN_LENGTH 16 // 16 periods (16th) per pattern
-#define TRACKER_SONG_LENGTH 85 // in patterns
+#define TRACKER_SONG_LENGTH 32 // in patterns
 #define AUDIO_SAMPLES (TRACKER_PERIOD * TRACKER_PATTERN_LENGTH * TRACKER_SONG_LENGTH * 2)
 
-//#define AUDIO_DEBUG
+#define AUDIO_DEBUG
 
 static const unsigned int riffHeader[11] = {
     0x46464952, /* RIFF */
@@ -167,11 +167,11 @@ static float saw2(float t, float phase)
 	return adsr * (fract(phase / TAU) * 2.0f - 1.0f) / SAW2_VOLUME_DIVIDER;
 }
 
-#define SQUARE_VOLUME_DIVIDER 12
 static float square(float t, float phase)
 {
-	short out = ((phase > 3.1415f) * 2 - 1) * 32767 / SQUARE_VOLUME_DIVIDER;
-	return (float)out / 32768.0f;
+	float out = (fract(phase / TAU) >= 0.5f) ? 1.0f : -1.0f;
+	
+	return out * 0.2f;
 }
 
 static float kick(float t, float phase)
@@ -208,6 +208,23 @@ static float noise(float t, float phase)
     return out / NOISE_VOLUME_DIVIDER;
 }
 
+static float mangatome(float t, float phase)
+{
+	/*float detune = 1.01f;
+	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
+	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);*/
+	
+	//float out = sin(phase * sin(t / 0.0000001f));
+	//float out = sin(phase + sin(phase * 1.12f) * t * 0.00001f);
+	
+	float detune = 1.01f - t * 0.0000002f;
+	float out = sin(phase + sin(phase * 1.12f) * t * 0.000001f) + sin(phase * detune + sin(phase * detune * 0.87f) * t * 0.000003f);
+	
+	//float out = saw(t, phase) + saw(t, phase * 1.02f);
+	
+    return out * 0.15f;
+}
+
 Instrument instruments[] = {
     /* 0 */ silence,
     /* 1 */ saw,
@@ -216,7 +233,8 @@ Instrument instruments[] = {
 	/* 4 */ kick,
 	/* 5 */ sine,
 	/* 6 */ reese,
-	/* 7 */ noise
+	/* 7 */ noise,
+	mangatome
 };
 
 #define CHANNELS 8
@@ -240,7 +258,7 @@ ChannelState channels[CHANNELS];
 unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
     // note, effects (4 bits) + instrument (4 bits)
     {
-        NOTE(0), 0,
+        0, 0,
         0, 0,
         0, 0,
         0, 0,
@@ -258,24 +276,24 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0
     },
 	
-	// 1 - semi-fast beat
-    {
-        NOTE(37), 0xc4,
+	// 1 - Mangatome
+	{
+        NOTE(37), 0xc8,
         0, 0,
         0, 0,
         0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        NOTE(37), 0xc4,
         0, 0,
         0, 0,
         0, 0,
-        NOTE(37), 0xc4,
         0, 0,
-        NOTE(37), 0xc4,
-        NOTE(37), 0xc4,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
     },
 	
 	// 2 - bass
@@ -288,357 +306,37 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        NOTE(11), 0xc6,
+        NOTE(17), 0xc6,
         0, 0,
         0, 0,
         0, 0,
         0, 0,
         0, 0,
-        NOTE(16), 0xc6,
+        NOTE(20), 0xc6,
         0, 0
     },
 	
-	// 3 - smi-fast beat 2
+	// 3 - solo
     {
-        NOTE(37), 0xc4,
+        NOTE(37), 0xe2,
         0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-    },
-	
-	// 4 - beat
-    {
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 5 - intro
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(42), 0xe2,
         NOTE(44), 0xe2,
-        NOTE(42), 0xe2,
         0, 0,
-        NOTE(40), 0xe2,
+        NOTE(41), 0xe2,
+        0, 0,
+        NOTE(44), 0xe2,
         0, 0,
         NOTE(37), 0xe2,
         0, 0,
-        NOTE(35), 0xe2,
-        0, 0
-    },
-	
-	// 6 - start
-	{
-        NOTE(37), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 7 - chords
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(25), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(25), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 8 - chords
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(32), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(32), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 9 - down
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(49), 0xe2,
-        0, 0,
-        NOTE(47), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        NOTE(42), 0xe2,
-        NOTE(40), 0xe2,
-        0, 0
-    },
-	
-	// 10 - high pitch
-	{
-        NOTE(52), 0xe5,
-        0, 0,
-        NOTE(44), 0xe5,
-        0, 0,
-        NOTE(49), 0xe5,
-        0, 0,
-        NOTE(44), 0xe5,
-        0, 0,
-        NOTE(52), 0xe5,
-        0, 0,
-        NOTE(44), 0xe5,
-        0, 0,
-        NOTE(49), 0xe5,
-        0, 0,
-        NOTE(44), 0xe5,
-        0, 0,
-    },
-	
-	// 11 - lead fill
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(42), 0xe2,
-        NOTE(44), 0xe2,
-        NOTE(42), 0xe2,
-        0, 0,
         NOTE(44), 0xe2,
         0, 0,
-        NOTE(47), 0xe2,
+        NOTE(41), 0xe2,
         0, 0,
-        NOTE(49), 0xe2,
+        NOTE(44), 0xe2,
         0, 0
     },
 	
-	// 12 - lead variation
-	{
-        NOTE(42), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(43), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 13 - bass variation
-    {
-        NOTE(6), 0xc3,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(0), 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(6), 0xc3,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 14 - bass variation 2
-    {
-        NOTE(0), 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(4), 0xc3,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 15 - reese variation
-    {
-        NOTE(18), 0xc6,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(0), 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(18), 0xc6,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 16 - reese variation 2
-    {
-        NOTE(0), 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(16), 0xc6,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0
-    },
-	
-	// 17 - faster beat
-    {
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-        NOTE(37), 0xc4,
-        0, 0,
-        0, 0,
-        NOTE(37), 0xc4,
-    },
-	
-	// 18 - faster chords
-	{
-        NOTE(30), 0xe5,
-        0, 0,
-        NOTE(18), 0xe5,
-        0, 0,
-        NOTE(30), 0xe5,
-        0, 0,
-        NOTE(42), 0xe5,
-        0, 0,
-        NOTE(30), 0xe5,
-        0, 0,
-        NOTE(18), 0xe5,
-        0, 0,
-        NOTE(30), 0xe5,
-        0, 0,
-        NOTE(42), 0xe5,
-        0, 0,
-    },
-	
-	// 19 - high pitch variation
-	{
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(47), 0xe5,
-        0, 0,
-        NOTE(47), 0xe5,
-        NOTE(47), 0xe5,
-        0, 0,
-        0, 0,
-        NOTE(47), 0xe5,
-        0, 0,
-    },
-	
-	// 20 - noise FX
+	// 4 - noise
 	{
         NOTE(30), 0xe7,
         0, 0,
@@ -655,71 +353,12 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        0, 0,
-    },
-	
-	// 21 - high pitch FX
-	{
-        NOTE(61), 0xe5,
-        0, 0,
-        NOTE(61), 0xe5,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-    },
-	
-	// 22 - hi-hat
-	{
-        NOTE(120), 0xe7,
-        0, 0,
-        0, 0,
-        NOTE(120), 0xe7,
-        NOTE(120), 0xe7,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(120), 0xe7,
-        NOTE(120), 0xe7,
-        0, 0,
-        0, 0,
-        NOTE(120), 0xe7,
-        0, 0,
-        0, 0,
-        0, 0,
-    },
-	
-	// 23 - lead crazy
-	{
-        NOTE(52), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(51), 0xe2,
-        0, 0,
-        NOTE(49), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(42), 0xe2,
         0, 0
     },
 	
-	// 24 - lead crazy 2
+	// 5 - note off
 	{
+        NOTE(0), 0,
         0, 0,
         0, 0,
         0, 0,
@@ -730,47 +369,6 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        NOTE(40), 0xe2,
-        0, 0,
-        NOTE(42), 0xe2,
-        0, 0,
-        NOTE(44), 0xe2,
-        0, 0
-    },
-	
-	// 25 - lasers
-	{
-        NOTE(40), 0xf3,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(32), 0xf3,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-    },
-	
-	// 26 - lead crazy 3
-	{
-        NOTE(52), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(51), 0xe2,
-        0, 0,
-        NOTE(49), 0xe2,
-        0, 0,
-        0, 0,
-        0, 0,
-        NOTE(44), 0xe2,
         0, 0,
         0, 0,
         0, 0,
@@ -778,9 +376,9 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0
     },
 	
-	// 27 - lead crazy 4
+	// 6 - chords
 	{
-        NOTE(54), 0xe2,
+        NOTE(32), 0xc3,
         0, 0,
         0, 0,
         0, 0,
@@ -792,19 +390,46 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        NOTE(52), 0xe2,
+        NOTE(36), 0xc3,
         0, 0,
         0, 0,
         0, 0
-    },
+    }
 };
 
 unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
-	// 0 - intro (4)
-    { 0, 5, 0, 0, 0, 0, 0, 0 },
+	// 0 - intro (32)
+    { 1, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+	
+	// 32 - bass
+    { 0, 2, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 0, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 4, 0, 0, 0, 0 },
+	
+	// 32 - happy
+    { 5, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 },
+    { 0, 2, 3, 0, 0, 0, 0, 0 }
 	
 	// 4 - black & white start (32)
-    { 4, 6, 7, 8, 0, 0, 0, 0 },
+    /*{ 4, 6, 7, 8, 0, 0, 0, 0 },
     { 4, 6, 7, 8, 0, 0, 0, 0 },
     { 4, 6, 7, 8, 0, 0, 0, 0 },
     { 4, 9, 7, 8, 0, 0, 0, 0 },
@@ -907,7 +532,7 @@ unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
     { 0, 6, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, 0, 0, 0, 0, 0, 0 }*/
 };
 
 static __forceinline void renderAudio()
