@@ -41,10 +41,10 @@ float DE(vec3 pos, int iterations, float details, float power)
 
 float map(vec3 pos)
 {
-	int iterations = 10;
+	int iterations = 8;
     float details = smoothstep(10.,20.,_u[0])*2.;
     float bounces = 0.4;
-    float power = 10.;
+    float power = 3.;
 	
     pos.xy = rotate(pos.xy, _u[0] * 0.7);
     pos.xz = rotate(pos.xz, _u[0]);
@@ -53,7 +53,7 @@ float map(vec3 pos)
 
 vec3 normal(vec3 p)
 {
-	vec2 e = vec2(0.01, 0.0);
+	vec2 e = vec2(0.06, 0.0);
 	return normalize(vec3(
 		map(p + e.xyy) - map(p - e.xyy),
 		map(p + e.yxy) - map(p - e.yxy),
