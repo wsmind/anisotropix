@@ -136,7 +136,8 @@ static float expf(float value)
 	return pow(2.71828f, value);
 }
 
-static float fract(float f)
+// returns fractional part but from -0.5f to 0.5f
+static float sfract(float f)
 {
 	return f - (float)(int)f;
 }
@@ -144,7 +145,7 @@ static float fract(float f)
 static float rand(float f)
 {
 	f = sin(f * 12.9898) * 43758.5453;
-	return fract(f);
+	return sfract(f);
 }
 
 typedef float (*Instrument)(float t, float phase);
@@ -157,21 +158,22 @@ static float silence(float t, float phase)
 #define SAW_VOLUME_DIVIDER 5.0f
 static float saw(float t, float phase)
 {
-	return (fract(phase / TAU) * 2.0f - 1.0f) / SAW_VOLUME_DIVIDER;
+	return sfract(phase / TAU) * 2.0f / SAW_VOLUME_DIVIDER;
 }
 
 #define SAW2_VOLUME_DIVIDER 10.0f
 static float saw2(float t, float phase)
 {
 	float adsr = expf(-(float)t * 0.001f);
-	return adsr * (fract(phase / TAU) * 2.0f - 1.0f) / SAW2_VOLUME_DIVIDER;
+	return adsr * sfract(phase / TAU) * 2.0f / SAW2_VOLUME_DIVIDER;
 }
 
 static float square(float t, float phase)
 {
-	float out = (fract(phase / TAU) >= 0.5f) ? 1.0f : -1.0f;
+	float adsr = expf(-(float)t * 0.0004f);
+	float out = sfract(phase / TAU) >= 0.0f;
 	
-	return out * 0.2f;
+	return adsr * out * 0.1f;
 }
 
 static float kick(float t, float phase)
@@ -203,7 +205,7 @@ static float reese(float t, float phase)
 static float noise(float t, float phase)
 {
 	float adsr = expf(-phase * 0.01f);
-	float out = adsr * rand(phase) * 2.0 - 1.0;
+	float out = adsr * rand(phase) * 2.0;
 	
     return out / NOISE_VOLUME_DIVIDER;
 }
@@ -378,7 +380,7 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
 	
 	// 6 - chords
 	{
-        NOTE(32), 0xc3,
+        NOTE(32), 0xe3,
         0, 0,
         0, 0,
         0, 0,
@@ -390,7 +392,27 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        NOTE(36), 0xc3,
+        NOTE(34), 0xe3,
+        0, 0,
+        0, 0,
+        0, 0
+    },
+	
+	// 7 - chords2
+	{
+        NOTE(37), 0xe3,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(41), 0xe3,
         0, 0,
         0, 0,
         0, 0
@@ -419,14 +441,14 @@ unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
     { 0, 2, 3, 4, 0, 0, 0, 0 },
 	
 	// 32 - happy
-    { 5, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 },
-    { 0, 2, 3, 0, 0, 0, 0, 0 }
+    { 5, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 },
+    { 0, 2, 3, 6, 7, 0, 0, 0 }
 	
 	// 4 - black & white start (32)
     /*{ 4, 6, 7, 8, 0, 0, 0, 0 },
@@ -565,8 +587,8 @@ static __forceinline void renderAudio()
                 {
 					float t = (float)channels[j].frame;
 					float phase = TAU * t / (float)channels[j].period;
-					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.75f;
-                    short s = (short)((int)(sf * 32767.0f) * 3 / 4);
+					float sf = instruments[channels[j].instrument & 0x0f](t, phase);
+                    short s = (short)((int)(sf * 32767.0f)/* * 3 / 4*/);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
                     
