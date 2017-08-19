@@ -66,10 +66,14 @@ float torus(vec3 pos, vec2 radiuses)
 
 float cog(vec3 pos, float id)
 {
+	float displacement = step(192, _u[0]) * step(0.0, 256.0 - _u[0]) * mod(_u[0], 64.0) / 64.0;
+	
+	pos.xy += 1.5 * displacement * vec2(rand(id), rand(id + 17.0));
+	
     float d = torus(pos, vec2(2.0, 0.3));
 	float index;
     pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0), index);
-    pos.x -= 1.7;
+    pos.x -= 1.7 / displacement;
     return min(d, box(pos, vec3(0.45, 0.3, 0.04)));
 }
 
@@ -136,7 +140,6 @@ float sphere(vec3 pos, float radius)
 {
 	return length(pos) - radius;
 }
-
 
 float prim(vec3 pos, vec3 corner, float radius)
 {
