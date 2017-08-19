@@ -158,7 +158,7 @@ static float silence(float t, float phase)
 static float kick(float t, float phase)
 {
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
-	out += expf(-t * 0.004f) * rand(phase);
+	out += expf(-t * 0.003f) * rand(phase);
 	
     return out;
 }
@@ -184,7 +184,7 @@ static float lead(float t, float phase)
 	float out = saw(t, phase) + saw(t, phase * 1.02f) * t * 0.00004f;
 	out += sin(phase);
 	
-    return adsr * out * 0.5f;
+    return adsr * out * 0.7f;
 }
 
 static float snare(float t, float phase)
@@ -865,7 +865,7 @@ static __forceinline void renderAudio()
                 {
 					float t = (float)channels[j].frame;
 					float phase = TAU * t / (float)channels[j].period;
-					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.5f;
+					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.3f;
                     short s = (short)(sf * 32767.0f);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
