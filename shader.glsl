@@ -36,11 +36,12 @@ float repeat(float f, float period, out float instance)
     return mod(f + period * 0.5, period) - period * 0.5;
 }
 
-vec2 moda(vec2 uv, float n)
+vec2 moda(vec2 uv, float n, out float index)
 {
-    float repeat = PI / n;
+    float period = PI / n;
     float angle = atan(uv.y, uv.x);
-    return rotate(uv, mod(angle + repeat, 2.0 * repeat) - repeat - angle);
+	index = floor((angle + period) / 2.0 * period);
+    return rotate(uv, mod(angle + period, 2.0 * period) - period - angle);
 }
 
 float box(vec3 pos, vec3 size)
@@ -57,7 +58,8 @@ float torus(vec3 pos, vec2 radiuses)
 float cog(vec3 pos, float id)
 {
     float d = torus(pos, vec2(2.0, 0.3));
-    pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0));
+	float index;
+    pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0), index);
     pos.x -= 1.7;
     return min(d, box(pos, vec3(0.45, 0.3, 0.04)));
 }
@@ -74,24 +76,44 @@ float cogs(vec3 pos)
 
 float panels(vec3 pos)
 {
-    float instance;
+    float instance, index;
     pos.z += _u[0] * 2.7;
     pos.z = repeat(pos.z, 7.0, instance);
     pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.2);
-    pos.xy = moda(pos.xy, 7.0);
+    pos.xy = moda(pos.xy, 7.0, index);
     pos.x -= 3.0;
     return box(pos, vec3(0.04, 0.02, 0.7));
 }
+
+/*float panels2(vec3 pos)
+{
+    float instance, index;
+    //pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.9);
+    pos.xy = moda(pos.xy, 5.0, index);
+    pos.z += _u[0] * 3.7 + rand(index) * 2.0;
+    pos.z = repeat(pos.z, 9.0, instance);
+    pos.x -= 1.15;
+    return box(pos, vec3(0.01, 0.01, 0.8));
+}*/
 
 float panels2(vec3 pos)
 {
     float instance;
     pos.z += _u[0] * 3.7;
-    pos.z = repeat(pos.z, 9.0, instance);
-    pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.9);
-    pos.xy = moda(pos.xy, 5.0);
-    pos.x -= 1.15;
-    return box(pos, vec3(0.01, 0.01, 0.8));
+    pos.z = repeat(pos.z, 17.0, instance);
+	
+	float d = 1000000.0;
+	
+	for (int i = 0; i < 5; i++)
+	{
+		vec3 p = pos;
+		p.xy = rotate(p.xy, float(i) * PI * 2.0 / 5.0);
+		p.x -= 1.15;
+		p.z += rand(float(i)) * 6.0;
+		d = min(d, box(p, vec3(0.01, 0.01, 0.8)));
+	}
+	
+	return d;
 }
 
 float sphere(vec3 pos, float radius)
