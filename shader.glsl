@@ -66,11 +66,16 @@ float cog(vec3 pos, float id)
 
 float cogs(vec3 pos)
 {
+	float cogPeriod = 1.0;
+	
     float instance;
     pos.z += _u[0] * 1.7;
     pos.z = repeat(pos.z, 4.0, instance);
     float id = rand(instance * 47.0);
-    pos.xy = rotate(pos.xy,  (id - 0.5) * _u[0] * 3.0);
+	float cogTime = _u[0] / cogPeriod;
+	cogTime = floor(cogTime) + pow(fract(cogTime), 4.0);
+	cogTime *= 3.0 * cogPeriod;
+    pos.xy = rotate(pos.xy, (id - 0.5) * cogTime);
     return cog(pos, id);
 }
 
@@ -243,7 +248,7 @@ void main(void)
 	
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
-	vec3 lightOctopus = vec3(0.4, 8.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
+	vec3 lightOctopus = 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
 	vec3 lightPanels = vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
     vec3 radiance = lightOctopus + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
