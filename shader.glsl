@@ -58,8 +58,8 @@ float cog(vec3 pos, float id)
 {
     float d = torus(pos, vec2(2.0, 0.3));
     pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0));
-    pos.x -= 2.4;
-    return min(d, box(pos, vec3(0.2, 0.4, 0.3)));
+    pos.x -= 1.7;
+    return min(d, box(pos, vec3(0.45, 0.3, 0.04)));
 }
 
 float cogs(vec3 pos)
@@ -76,21 +76,21 @@ float panels(vec3 pos)
 {
     float instance;
     pos.z += _u[0] * 2.7;
-    pos.z = repeat(pos.z, 2.0, instance);
+    pos.z = repeat(pos.z, 7.0, instance);
     pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.2);
     pos.xy = moda(pos.xy, 7.0);
     pos.x -= 3.0;
-    return min(box(pos, vec3(0.02, 0.4, 0.4)), box(pos, vec3(0.04, 0.2, 0.7)));
+    return box(pos, vec3(0.04, 0.02, 0.7));
 }
 
 float panels2(vec3 pos)
 {
     float instance;
     pos.z += _u[0] * 3.7;
-    pos.z = repeat(pos.z, 3.0, instance);
+    pos.z = repeat(pos.z, 9.0, instance);
     pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.9);
     pos.xy = moda(pos.xy, 5.0);
-    pos.x -= 1.6;
+    pos.x -= 1.15;
     return box(pos, vec3(0.01, 0.01, 0.8));
 }
 
@@ -173,12 +173,14 @@ float ao(vec3 p, vec3 n, float step)
 	return max(ao, 0.0);
 }
 
-float light(vec3 p, vec3 n, float d, float range, float energy)
+float light(vec3 p, vec3 n, float d, float range)
 {
-	float irradiance = dot(n.xy, -normalize(p.xy)) * 0.4 + 0.6;
+	vec3 lightDirection = normalize(vec3(1.0, 1.0, -1.0));
+	//float irradiance = dot(n.xy, -normalize(p.xy)) * 0.4 + 0.6;
+	float irradiance = dot(n.xy, lightDirection) * 0.5 + 0.5;
 	
 	float ld = d / range;
-	return irradiance * energy / (ld * ld + 1.0);
+	return irradiance / (ld * ld + 1.0);
 }
 
 vec3 tonemap(vec3 color)
@@ -219,14 +221,13 @@ void main(void)
 	
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
-	vec3 l = vec3(5.0, 0.0, 0.02) * light(pos, n, panels2(pos), 0.2, 1.0);
-	vec3 l2 = vec3(2.0, 0.4, 3.0) * light(pos, n, panels(pos), 0.4, 0.7);
+	vec3 lightOctopus = vec3(0.4, 8.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
+	vec3 lightPanels = vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
-    //vec3 light = vec3(20.0, 0.0, 0.0) / (length(pos) * length(pos) * 100.0 + 1.0);
-    vec3 radiance = l + l2 + occlusion * 0.01;
+    vec3 radiance = lightOctopus + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
     
-    float fog = exp((-pos.z - 4.0) * 0.01);
-    radiance = mix(vec3(1.0), radiance, fog);
+    float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
+    radiance = mix(vec3(0.0), radiance, fog);
 	
 	gl_FragColor = vec4(tonemap(radiance), 1.0);
 }
