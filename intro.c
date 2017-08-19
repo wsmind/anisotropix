@@ -158,7 +158,7 @@ static float silence(float t, float phase)
 static float kick(float t, float phase)
 {
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
-	out += expf(-t * 0.003f) * rand(phase);
+	out += expf(-t * 0.003f) * rand(phase) * 0.6f;
 	
     return out;
 }
