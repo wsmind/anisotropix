@@ -142,8 +142,8 @@ float map(vec3 pos)
     //pos.yz = rotate(pos.yz, _u[0]);
     //return min(cogs(pos), -length(pos.xy) + 5.0);
     //return cogs(pos);
-	return frac_octopus(pos);
-    //return min(min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy)),frac_octopus(pos));
+	//return frac_octopus(pos);
+    return min(min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy)),frac_octopus(pos));
 }
 
 vec3 normal(vec3 p)
