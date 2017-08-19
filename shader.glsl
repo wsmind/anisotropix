@@ -132,7 +132,7 @@ float frac_octopus(vec3 pos)
 	pos.xy = rotate(pos.xy, _u[0]*0.7+tan((_u[0]-16.)*PI/32.)*0.05);
 	pos.xz = rotate(pos.xz,sin(_u[0]));
     pos = abs(pos);
-    float corner = 0.4;
+    float corner = 0.6;
 	float radius = crazy_radius;
     float c = prim(pos,vec3(corner),radius);
     for (int i=0; i < arm_iteration; i++)
@@ -225,14 +225,14 @@ vec3 tonemap(vec3 color)
 void main(void)
 {
 	crazy_radius = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
-	crazy_corner = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
+	crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	arm_rotation = sin(_u[0]);
-	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 10.0));
+	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
-	vec3 pos = vec3(0.0, 0.0, -4.0);
+	vec3 pos = vec3(0.0, 0.0, -3.0);
 	
 	for (int i = 0; i < 128; i++)
 	{
