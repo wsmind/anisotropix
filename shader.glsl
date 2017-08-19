@@ -199,7 +199,7 @@ float light(vec3 p, vec3 n, float d, float range)
 {
 	vec3 lightDirection = normalize(vec3(1.0, 1.0, -1.0));
 	//float irradiance = dot(n.xy, -normalize(p.xy)) * 0.4 + 0.6;
-	float irradiance = dot(n.xy, lightDirection) * 0.5 + 0.5;
+	float irradiance = dot(n, lightDirection) * 0.5 + 0.5;
 	
 	float ld = d / range;
 	return irradiance / (ld * ld + 1.0);
@@ -227,7 +227,7 @@ void main(void)
 	crazy_radius = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
 	crazy_corner = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
 	arm_rotation = sin(_u[0]);
-	arm_iteration = clamp(int(_u[0] * 10.0 / 64.0), 1, 10);
+	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 10.0));
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
