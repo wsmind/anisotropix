@@ -4,6 +4,8 @@ uniform float _u[UNIFORM_COUNT];
 vec2 resolution = vec2(_u[4], _u[5]);
 
 float PI = 3.141592;
+float crazy_corner;
+float crazy_radius;
 
 vec2 rotate(vec2 uv, float a)
 {
@@ -94,50 +96,33 @@ float sphere(vec3 pos, float radius)
 	return length(pos) - radius;
 }
 
+
+float prim(vec3 pos, vec3 corner, float radius)
+{
+    return max(-sphere(pos,radius),box(pos, corner));
+}
+
 float frac_octopus(vec3 pos)
 {
 	pos.xy = rotate(pos.xy, _u[0]*0.7+tan((_u[0]-16.)*PI/32.)*0.05);
 	pos.xz = rotate(pos.xz,sin(_u[0]));
     pos = abs(pos);
-    float corner = 0.5;
-    float c = box(pos,vec3(corner));
+    float corner = 0.4;
+	float radius = crazy_radius;
+    float c = prim(pos,vec3(corner),radius);
     for (int i=0; i<6; i++)
     {
         pos = pos-vec3(corner);
-        corner *= 0.6;
+        corner *= crazy_corner;
+		radius *= crazy_radius;
         pos.xy = rotate(pos.xy, sin(_u[0]));
         pos.yz = rotate(pos.yz,sin(_u[0]));
-        float b = box(pos,vec3(corner));
+        float b = prim(pos,vec3(corner),radius);
         c = min(b,c);
     }
     return c;
 }
-/*float DE(vec3 pos, int iterations, float details, float power) 
-{
-	vec3 z = pos;
-	float dr = 1.0;
-	float r = 0.0;
-	for (int i = 0; i < iterations ; i++) {
-		r = length(z);
-		if (r>details) break;
-		
-		// convert to polar coordinates
-		float theta = acos(z.z/r);
-		float phi = atan(z.y,z.x);
-		dr =  pow(r, power -1.0)*power*dr + 1.0;
-		
-		// scale and rotate the point
-		float zr = pow(r,power);
-		theta = theta*power;
-		phi = phi*power;
-		
-		// convert back to cartesian coordinates
-		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
-		z+=pos;
-	}
-	return 0.5*log(r)*r/dr;
-}
-
+/*
 float map(vec3 pos)
 {
 	int iterations = 8;
@@ -212,6 +197,8 @@ vec3 tonemap(vec3 color)
 
 void main(void)
 {	
+	crazy_radius = sin(_u[0]/3.5);
+	crazy_corner = clamp(0.1,0.9,sin(_u[0]/3.));
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
