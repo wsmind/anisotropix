@@ -46,7 +46,7 @@ float box(vec3 pos, vec3 size)
 
 float torus(vec3 pos, vec2 radiuses)
 {
-    return nnorm(vec2(length(pos.xy) - radiuses.x, pos.z), 8.0) - radiuses.y;
+    return nnorm(vec2(length(pos.xy) - radiuses.x, pos.z), 2.0) - radiuses.y;
 }
 
 float cog(vec3 pos, float id)
@@ -137,8 +137,8 @@ float map(vec3 pos)
     //pos.xy = rotate(pos.xy, _u[0] * 0.7);
     //pos.yz = rotate(pos.yz, _u[0]);
     //return min(cogs(pos), -length(pos.xy) + 5.0);
-    return cogs(pos);
-    //return min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy));
+    //return cogs(pos);
+    return min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy));
 }
 
 vec3 normal(vec3 p)
