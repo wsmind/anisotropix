@@ -14,6 +14,9 @@ float pulse;
 float kick_pulse;
 float lead_pulse;
 
+float starlights_visible;
+float cogs_visible;
+
 vec2 rotate(vec2 uv, float a)
 {
 	return mat2(cos(a), sin(a), -sin(a), cos(a)) * uv;
@@ -72,6 +75,8 @@ float cogs(vec3 pos)
 {
 	float cogPeriod = 1.0;
 	
+	pos.x += 1000.0 * (1.0 - cogs_visible);
+	
     float instance;
     pos.z += _u[0] * 1.7;
     pos.z = repeat(pos.z, 4.0, instance);
@@ -91,7 +96,7 @@ float panels(vec3 pos)
     pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.2);
     pos.xy = moda(pos.xy, 7.0, index);
     pos.x -= 3.0;
-    return box(pos, vec3(0.04, 0.02, 0.7));
+    return box(pos, vec3(0.04, 0.02, 0.7) * starlights_visible);
 }
 
 /*float panels2(vec3 pos)
@@ -119,7 +124,7 @@ float panels2(vec3 pos)
 		p.xy = rotate(p.xy, float(i) * PI * 2.0 / 5.0);
 		p.x -= 1.15;
 		p.z += rand(float(i)) * 6.0;
-		d = min(d, box(p, vec3(0.01, 0.01, 0.8)));
+		d = min(d, box(p, vec3(0.01, 0.01, 0.8) * starlights_visible));
 	}
 	
 	return d;
@@ -228,6 +233,9 @@ void main(void)
 
 	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0 + step(66.0, _u[0]) * 8.0) * 2.0) * step(0.0, 320.0 - _u[0]);
 
+	starlights_visible = smoothstep(60.0, 64.0, _u[0]);
+	cogs_visible = step(128.0, _u[0]);
+	
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
@@ -251,8 +259,8 @@ void main(void)
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
 	vec3 lightOctopus = 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
-	vec3 lightPanels = kick_pulse * vec3(7.0) * light(pos, n, panels(pos), 0.3);
-	vec3 lightPanels2 = vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
+	vec3 lightPanels = starlights_visible * kick_pulse * vec3(7.0) * light(pos, n, panels(pos), 0.3);
+	vec3 lightPanels2 = starlights_visible * vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
     vec3 radiance = lightOctopus * lead_pulse + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
     
