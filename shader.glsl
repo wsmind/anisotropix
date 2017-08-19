@@ -19,6 +19,8 @@ float radius_animation;
 float starlights_visible;
 float cogs_visible;
 
+float wtf;
+
 float iteration_animation;
 
 vec2 rotate(vec2 uv, float a)
@@ -255,6 +257,9 @@ void main(void)
 	arm_iteration = int(mix((clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0)), clamp(pow(lead_pulse,1./3.),1.0,8.0),iteration_animation));
 	arm_rotation = sin(_u[0]/4.);
 	
+	wtf = clamp((_u[0] - 256.0) / 64.0, 0.0, 1.0);
+	//wtf = mod(_u[0], 64.0) / 64.0;
+	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
 	uv.y += 0.2 * section_pulse * (mod(gl_FragCoord.x, 2.0) - 0.5);
@@ -276,12 +281,16 @@ void main(void)
 	vec3 lightPanels2 = starlights_visible * vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
     vec3 radiance = lightOctopus + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
+    vec3 radiance2 = occlusion;
+	
+	//float luminance = dot(radiance, vec3(0.3, 0.59, 0.11));
+	radiance = mix(radiance, radiance2, wtf);
     
-    float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
+    float fog = exp(min((-pos.z + 2.0), 0.0) * (0.1 + wtf * 0.5));
     radiance = mix(vec3(0.0), radiance, fog);
 	
 	vec3 color = tonemap(radiance);
-	color = mix(color, vec3(1.0), section_pulse);
+	color = mix(color, vec3(1.0), section_pulse + clamp((_u[0] - 320.0) / 16.0, 0.0, 1.0));
 	
 	gl_FragColor = vec4(color, 1.0);
 }
