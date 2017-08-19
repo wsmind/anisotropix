@@ -147,8 +147,8 @@ float frac_octopus(vec3 pos)
 	pos.xy = rotate(pos.xy, _u[0]*0.7+tan((_u[0]-16.)*PI/32.)*0.05);
 	pos.xz = rotate(pos.xz,sin(_u[0]));
     pos = abs(pos);
-    float corner = 0.6;
-	float radius = crazy_radius;
+    float corner = 0.5;
+	float radius = crazy_radius * corner;
     float c = prim(pos,vec3(corner),radius);
     for (int i=0; i < arm_iteration; i++)
     {
@@ -241,7 +241,7 @@ void main(void)
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
-	crazy_radius = mix(1.4,0.8,pow(lead_pulse,1./4.))*(1.-radius_animation);
+	crazy_radius = mix(1.9, 1.4, pow(lead_pulse,1./4.))*(1.-radius_animation);
 	crazy_corner = 0.7;
 	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0));
 	arm_rotation = sin(_u[0]);
@@ -260,11 +260,11 @@ void main(void)
 	
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
-	vec3 lightOctopus = 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
+	vec3 lightOctopus = mix(lead_pulse, 1.0, smoothstep(120.0, 128.0, _u[0])) * 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
 	vec3 lightPanels = starlights_visible * kick_pulse * vec3(7.0) * light(pos, n, panels(pos), 0.3);
 	vec3 lightPanels2 = starlights_visible * vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
-    vec3 radiance = lightOctopus * lead_pulse + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
+    vec3 radiance = lightOctopus + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
     
     float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
     radiance = mix(vec3(0.0), radiance, fog);
