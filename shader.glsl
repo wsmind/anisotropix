@@ -6,6 +6,7 @@ vec2 resolution = vec2(_u[4], _u[5]);
 float PI = 3.141592;
 float crazy_corner;
 float crazy_radius;
+float arm_rotation;
 
 vec2 rotate(vec2 uv, float a)
 {
@@ -115,8 +116,8 @@ float frac_octopus(vec3 pos)
         pos = pos-vec3(corner);
         corner *= crazy_corner;
 		radius *= crazy_radius;
-        pos.xy = rotate(pos.xy, sin(_u[0]));
-        pos.yz = rotate(pos.yz,sin(_u[0]));
+        pos.xy = rotate(pos.xy, arm_rotation);
+        pos.yz = rotate(pos.yz,	arm_rotation);
         float b = prim(pos,vec3(corner),radius);
         c = min(b,c);
     }
@@ -141,8 +142,8 @@ float map(vec3 pos)
     //pos.yz = rotate(pos.yz, _u[0]);
     //return min(cogs(pos), -length(pos.xy) + 5.0);
     //return cogs(pos);
-	//return frac_octopus(pos);
-    return min(min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy)),frac_octopus(pos));
+	return frac_octopus(pos);
+    //return min(min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy)),frac_octopus(pos));
 }
 
 vec3 normal(vec3 p)
@@ -197,12 +198,14 @@ vec3 tonemap(vec3 color)
 
 void main(void)
 {	
-	crazy_radius = sin(_u[0]/3.5);
-	crazy_corner = clamp(0.1,0.9,sin(_u[0]/3.));
+	crazy_radius = clamp(0.1,0.7,sin(_u[0])*0.7);
+    crazy_corner = clamp(0.1,0.7,tan(_u[0]/1.5)*0.7);
+	arm_rotation = sin(_u[0]);
+	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
-	vec3 pos = vec3(0.0, 0.0, -2.0);
+	vec3 pos = vec3(0.0, 0.0, -4.0);
 	
 	for (int i = 0; i < 70; i++)
 	{
