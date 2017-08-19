@@ -10,6 +10,8 @@ float crazy_radius;
 float arm_rotation;
 int arm_iteration;
 
+float lead_pulse;
+
 vec2 rotate(vec2 uv, float a)
 {
 	return mat2(cos(a), sin(a), -sin(a), cos(a)) * uv;
@@ -66,11 +68,16 @@ float cog(vec3 pos, float id)
 
 float cogs(vec3 pos)
 {
+	float cogPeriod = 1.0;
+	
     float instance;
     pos.z += _u[0] * 1.7;
     pos.z = repeat(pos.z, 4.0, instance);
     float id = rand(instance * 47.0);
-    pos.xy = rotate(pos.xy,  (id - 0.5) * _u[0] * 3.0);
+	float cogTime = _u[0] / cogPeriod;
+	cogTime = floor(cogTime) + pow(fract(cogTime), 4.0);
+	cogTime *= 3.0 * cogPeriod;
+    pos.xy = rotate(pos.xy, (id - 0.5) * cogTime);
     return cog(pos, id);
 }
 
@@ -212,6 +219,7 @@ vec3 tonemap(vec3 color)
 
 void main(void)
 {
+	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0) * 2.0);
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
@@ -234,10 +242,10 @@ void main(void)
 	
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
-	vec3 lightOctopus = vec3(0.4, 8.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
+	vec3 lightOctopus = 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
 	vec3 lightPanels = vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
-    vec3 radiance = lightOctopus + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
+    vec3 radiance = lightOctopus * lead_pulse + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
     
     float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
     radiance = mix(vec3(0.0), radiance, fog);
