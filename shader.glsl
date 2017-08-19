@@ -13,6 +13,7 @@ int arm_iteration;
 float pulse;
 float kick_pulse;
 float lead_pulse;
+float section_pulse;
 
 float radius_animation;
 float starlights_visible;
@@ -236,6 +237,8 @@ void main(void)
 
 	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0 + step(66.0, _u[0]) * 8.0) * 2.0) * step(0.0, 320.0 - _u[0]);
 	
+	section_pulse = exp(-mod(_u[0], 64.0));
+	
 	radius_animation = smoothstep(60.0,64.0,_u[0]);
 	starlights_visible = smoothstep(56.0, 64.0, _u[0]);
 	cogs_visible = step(128.0, _u[0]);
@@ -251,6 +254,8 @@ void main(void)
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
+	uv.y += 0.2 * section_pulse * (mod(gl_FragCoord.x, 2.0) - 0.5);
+	
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
 	vec3 pos = vec3(0.0, 0.0, -3.0);
 	
@@ -264,7 +269,7 @@ void main(void)
     vec3 n = normal(pos);
     float occlusion = ao(pos, normal(pos), 0.04);
 	vec3 lightOctopus = mix(lead_pulse, 1.0, smoothstep(120.0, 128.0, _u[0])) * 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
-	vec3 lightPanels = starlights_visible * kick_pulse * vec3(7.0) * light(pos, n, panels(pos), 0.3);
+	vec3 lightPanels = step(32.0, _u[0]) * kick_pulse * vec3(7.0) * light(pos, n, panels(pos), 0.3);
 	vec3 lightPanels2 = starlights_visible * vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
     vec3 radiance = lightOctopus + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
@@ -272,5 +277,8 @@ void main(void)
     float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
     radiance = mix(vec3(0.0), radiance, fog);
 	
-	gl_FragColor = vec4(tonemap(radiance), 1.0);
+	vec3 color = tonemap(radiance);
+	color = mix(color, vec3(1.0), section_pulse);
+	
+	gl_FragColor = vec4(color, 1.0);
 }
