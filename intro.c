@@ -760,7 +760,7 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
 	
 	// 24 - saw saw saw 3
     {
-        NOTE(23), 0xe7,
+        NOTE(15), 0xe7,
         0, 0,
         0, 0,
         0, 0,
@@ -768,7 +768,7 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        0, 0,
+        NOTE(14), 0xe7,
         0, 0,
         0, 0,
         0, 0,
