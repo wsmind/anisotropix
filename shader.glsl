@@ -86,7 +86,7 @@ float panels2(vec3 pos)
     pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * _u[0] * 0.9);
     pos.xy = moda(pos.xy, 5.0);
     pos.x -= 1.6;
-    return box(pos, vec3(0.01, 0.5, 0.8));
+    return box(pos, vec3(0.01, 0.01, 0.8));
 }
 
 float sphere(vec3 pos, float radius)
@@ -231,8 +231,8 @@ void main(void)
     //vec3 light = vec3(20.0, 0.0, 0.0) / (length(pos) * length(pos) * 100.0 + 1.0);
     vec3 radiance = l + l2 + occlusion * 0.01;
     
-    float fog = exp((-pos.z - 2.0) * 0.4);
-    radiance = mix(vec3(0.0), radiance, fog);
+    float fog = exp((-pos.z - 2.0) * 0.01);
+    radiance = mix(vec3(1.0), radiance, fog);
 	
 	gl_FragColor = vec4(tonemap(radiance), 1.0);
 }
