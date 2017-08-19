@@ -202,7 +202,7 @@ void main(void)
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
 
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
-	vec3 pos = vec3(0.0, 0.0, -2.0);
+	vec3 pos = vec3(0.0, 0.0, -4.0);
 	
 	for (int i = 0; i < 70; i++)
 	{
@@ -219,7 +219,7 @@ void main(void)
     //vec3 light = vec3(20.0, 0.0, 0.0) / (length(pos) * length(pos) * 100.0 + 1.0);
     vec3 radiance = l + l2 + occlusion * 0.01;
     
-    float fog = exp((-pos.z - 2.0) * 0.01);
+    float fog = exp((-pos.z - 4.0) * 0.01);
     radiance = mix(vec3(1.0), radiance, fog);
 	
 	gl_FragColor = vec4(tonemap(radiance), 1.0);
