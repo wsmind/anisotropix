@@ -250,9 +250,9 @@ void main(void)
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
-	crazy_radius = mix(1.9, 1.4, pow(lead_pulse,1./4.))*(1.-radius_animation)+smoothstep(188.0,192.0,_u[0])*2.-iteration_animation*2.;
-	crazy_corner = 0.7;
-	arm_iteration = int(mix((clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0)), clamp(pow(lead_pulse,1./3.),1.0,8.0),iteration_animation));
+	crazy_radius = mix(mix(1.9, 1.4, pow(lead_pulse,1./4.))*(1.-radius_animation)+smoothstep(184.0,192.0,_u[0])*2.,sin(_u[0])+0.5,iteration_animation);
+	crazy_corner = mix(0.7, clamp(sin(_u[0]) * 0.7, 0.5, 0.95),iteration_animation);
+	arm_iteration = int(mix((clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0)), pulse*8.+1.,iteration_animation));
 	arm_rotation = sin(_u[0]/4.);
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
