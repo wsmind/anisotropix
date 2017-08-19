@@ -222,7 +222,7 @@ void main(void)
     //vec3 light = vec3(20.0, 0.0, 0.0) / (length(pos) * length(pos) * 100.0 + 1.0);
     vec3 radiance = l + l2 + occlusion * 0.01;
     
-    float fog = exp((-pos.z - 2.0) * 0.01);
+    float fog = exp((-pos.z - 4.0) * 0.01);
     radiance = mix(vec3(1.0), radiance, fog);
 	
 	gl_FragColor = vec4(tonemap(radiance), 1.0);
