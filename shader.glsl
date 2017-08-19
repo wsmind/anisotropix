@@ -231,7 +231,7 @@ vec3 tonemap(vec3 color)
 
 void main(void)
 {
-	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0) * 2.0);
+	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0 + step(66.0, _u[0]) * 8.0) * 2.0) * step(0.0, 320.0 - _u[0]);
 	
 	crazy_radius = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
 	crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);

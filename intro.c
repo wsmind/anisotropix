@@ -1044,6 +1044,9 @@ void entry()
     glAttachShader(program, fragmentShader);
     glLinkProgram(program);
     glUseProgram(program);
+	
+	// draw a phony frame to force shader compilation
+	glRects(-1, -1, 1, 1);
     
     renderAudio();
     memcpy(audioBuffer, &riffHeader, sizeof(riffHeader));
