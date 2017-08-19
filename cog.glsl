@@ -46,10 +46,10 @@ float torus(vec3 pos, vec2 radiuses)
 
 float cog(vec3 pos, float id)
 {
-    float d = torus(pos, vec2(2.0, 0.1));
+    float d = torus(pos, vec2(2.0, 0.3));
     pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0));
-    pos.x -= 2.2;
-    return min(d, box(pos, vec3(0.2, 0.3, 0.1)));
+    pos.x -= 2.4;
+    return min(d, box(pos, vec3(0.2, 0.4, 0.3)));
 }
 
 float cogs(vec3 pos)
@@ -77,9 +77,9 @@ float panels2(vec3 pos)
     float instance;
     pos.z += iGlobalTime * 2.7;
     pos.z = repeat(pos.z, 3.0, instance);
-    pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * iGlobalTime * 0.7);
+    pos.xy = rotate(pos.xy,  (rand(instance) - 0.5) * iGlobalTime * 0.9);
     pos.xy = moda(pos.xy, 5.0);
-    pos.x -= 1.7;
+    pos.x -= 1.6;
     return box(pos, vec3(0.01, 0.5, 0.8));
 }
 
@@ -102,6 +102,29 @@ vec3 normal(vec3 p)
 	));
 }
 
+float ao(vec3 p, vec3 n, float step)
+{
+	float md = 0.0;
+	float ao = 1.0;
+	for (int i = 0; i < 5; i++)
+	{
+		p += n * step;
+		md += step;
+		ao = min(ao, map(p) / md);
+		//ao = min(ao, smoothstep(0.0, md * 2.0, map(p)));
+	}
+	
+	return max(ao, 0.0);
+}
+
+float light(vec3 p, vec3 n, float d, float range, float energy)
+{
+	float irradiance = dot(n.xy, -normalize(p.xy)) * 0.4 + 0.6;
+	
+	float ld = d / range;
+	return irradiance * energy / (ld * ld + 1.0);
+}
+
 vec3 tonemap(vec3 color)
 {
 	// rheinhard
@@ -121,13 +144,23 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	vec3 pos = vec3(0.0, 0.0, iGlobalTime);
 	float d;
 	int i;
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 128; i++)
 	{
 		d = map(pos);
 		if (d < 0.001) break;
 		pos += dir * d;
 	}
     
+    vec3 n = normal(pos);
+    float occlusion = ao(pos, normal(pos), 0.04);
+	vec3 l = vec3(5.0, 0.0, 0.02) * light(pos, n, panels2(pos), 0.2, 1.0);
+	vec3 l2 = vec3(2.0, 1.0, 0.02) * light(pos, n, panels(pos), 0.8, 0.5);
+    
     //vec3 light = vec3(20.0, 0.0, 0.0) / (length(pos) * length(pos) * 100.0 + 1.0);
-	fragColor = vec4(tonemap(normal(pos) * 0.5 + 0.5),1.0);
+    vec3 radiance = l + l2 + occlusion * 0.01;
+    
+    float fog = exp((-pos.z + iGlobalTime) * 0.4);
+    radiance = mix(vec3(0.0), radiance, fog);
+    
+	fragColor = vec4(tonemap(radiance),1.0);
 }
