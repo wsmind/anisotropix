@@ -16,7 +16,7 @@ typedef GLuint (APIENTRYP PFNGLCREATESHADERPROC) (GLenum type);
 typedef void (APIENTRYP PFNGLLINKPROGRAMPROC) (GLuint program);
 typedef void (APIENTRYP PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length);
 typedef void (APIENTRYP PFNGLUSEPROGRAMPROC) (GLuint program);
-typedef void (APIENTRYP PFNGLUNIFORM1FPROC) (GLint location, GLfloat v0);
+typedef void (APIENTRYP PFNGLUNIFORM1FVPROC) (GLint location, GLsizei count, const GLfloat *value);
 // end of glext.h fragment
 
 #define GL_EXT_FUNCTION_COUNT 8
@@ -29,7 +29,7 @@ static const char *glExtFunctionNames[] = {
     "glLinkProgram",
     "glShaderSource",
     "glUseProgram",
-    "glUniform1f"
+    "glUniform1fv"
 };
 
 static void *glExtFunctions[GL_EXT_FUNCTION_COUNT] = { 0 };
@@ -41,7 +41,7 @@ static void *glExtFunctions[GL_EXT_FUNCTION_COUNT] = { 0 };
 #define glLinkProgram ((PFNGLLINKPROGRAMPROC)glExtFunctions[4])
 #define glShaderSource ((PFNGLSHADERSOURCEPROC)glExtFunctions[5])
 #define glUseProgram ((PFNGLUSEPROGRAMPROC)glExtFunctions[6])
-#define glUniform1f ((PFNGLUNIFORM1FPROC)glExtFunctions[7])
+#define glUniform1fv ((PFNGLUNIFORM1FVPROC)glExtFunctions[7])
 
 static PIXELFORMATDESCRIPTOR pfd = {
     sizeof(PIXELFORMATDESCRIPTOR),
@@ -158,7 +158,7 @@ static float silence(float t, float phase)
 static float kick(float t, float phase)
 {
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
-	out += expf(-t * 0.002f) * rand(phase);
+	out += expf(-t * 0.004f) * rand(phase);
 	
     return out;
 }
@@ -180,8 +180,8 @@ static float lead(float t, float phase)
 	/*float detune = 1.01f - t * 0.0000002f;
 	float out = sin(phase + sin(phase * 1.12f) * t * 0.000001f) + sin(phase * detune + sin(phase * detune * 0.87f) * t * 0.000003f);*/
 	
-	float adsr = expf(-(float)t * 0.00001f);
-	float out = saw(t, phase + sin(phase * 4.0f) * t * 0.0001f) + saw(t, phase * 1.02f) * t * 0.00001f;
+	float adsr = expf(-(float)t * 0.00004f);
+	float out = saw(t, phase + sin(phase * 0.5f) * t * 0.00001f) + saw(t, phase * 1.02f) * t * 0.00001f;
 	
     return adsr * out * 0.5f;
 }
@@ -201,6 +201,11 @@ static float square(float t, float phase)
 	return adsr * out * 0.1f;
 }
 
+static float bass(float t, float phase)
+{
+	return square(t, phase) + square(t, phase * 1.02f);
+}
+
 #define SINE_VOLUME_DIVIDER 6.0f
 static float sine(float t, float phase)
 {
@@ -211,11 +216,12 @@ static float sine(float t, float phase)
 
 static float reese(float t, float phase)
 {
+	float adsr = expf(-(float)t * 0.0004f);
 	float detune = 1.01f;
 	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
 	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);
 	
-    return 0.25f * out;
+    return adsr * 0.25f * out;
 }
 
 #define NOISE_VOLUME_DIVIDER 32.0f
@@ -227,27 +233,11 @@ static float noise(float t, float phase)
     return out / NOISE_VOLUME_DIVIDER;
 }
 
-static float mangatome(float t, float phase)
-{
-	/*float detune = 1.01f;
-	float out = sin(phase) + 0.5f * sin(phase * 2.0) + 0.33f * sin(phase * 3.0)
-	          + sin(phase * detune) + 0.5f * sin(phase * 2.0 * detune) + 0.33f * sin(phase * 3.0 * detune);*/
-	
-	//float out = sin(phase * sin(t / 0.0000001f));
-	//float out = sin(phase + sin(phase * 1.12f) * t * 0.00001f);
-	
-	float detune = 1.01f - t * 0.0000002f;
-	float out = sin(phase + sin(phase * 1.12f) * t * 0.000001f) + sin(phase * detune + sin(phase * detune * 0.87f) * t * 0.000003f);
-	
-	//float out = saw(t, phase) + saw(t, phase * 1.02f);
-	
-    return out * 0.15f;
-}
-
 Instrument instruments[] = {
     /* 0 */ silence,
     /* 1 */ kick,
-    /* 1 */ lead,
+    /* 2 */ reese,
+    /* 3 */ lead,
 };
 
 #define CHANNELS 8
@@ -329,7 +319,27 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0
     },
 	
-	// 3 - lead
+	// 3 - bass
+    {
+        NOTE(13), 0xc2,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(13), 0xc2,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    },
+	
+	// 4 - lead
     {
         0, 0,
         0, 0,
@@ -339,7 +349,7 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0,
         0, 0,
-        NOTE(37), 0xc2,
+        NOTE(49), 0xc3,
         0, 0,
         0, 0,
         0, 0,
@@ -352,14 +362,14 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
 
 unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
 	// 0 - intro (32)
-    { 2, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 3, 0, 0, 0, 0, 0, 0 },
-    { 2, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 3, 0, 0, 0, 0, 0, 0 },
-    { 2, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 3, 0, 0, 0, 0, 0, 0 },
-    { 2, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 3, 0, 0, 0, 0, 0, 0 }
+    { 2, 3, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 2, 3, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 2, 3, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 2, 3, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
 static __forceinline void renderAudio()
@@ -543,8 +553,7 @@ void entry()
         
         // hack - assume that the uniforms u[] will always be linked to locations [0-n]
         // given that they are the only uniforms in the shader, it is likely to work on all drivers
-        for (i = 0; i < UNIFORM_COUNT; i++)
-            glUniform1f(i, u[i]);
+		glUniform1fv(0, UNIFORM_COUNT, u);
         
         glRects(-1, -1, 1, 1);
         
