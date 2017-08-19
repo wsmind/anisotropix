@@ -80,7 +80,7 @@ static PIXELFORMATDESCRIPTOR pfd = {
 
 #define TRACKER_PERIOD 4725 // 140 bpm (44100 * 60 / 140 / 4)
 #define TRACKER_PATTERN_LENGTH 16 // 16 periods (16th) per pattern
-#define TRACKER_SONG_LENGTH 32 // in patterns
+#define TRACKER_SONG_LENGTH 48 // in patterns
 #define AUDIO_SAMPLES (TRACKER_PERIOD * TRACKER_PATTERN_LENGTH * TRACKER_SONG_LENGTH * 2)
 
 #define AUDIO_DEBUG
@@ -158,14 +158,14 @@ static float silence(float t, float phase)
 static float kick(float t, float phase)
 {
 	float out = expf(-t * 0.001f) * sin(phase * expf(-t * 0.0002f));
-	out += expf(-t * 0.004f) * rand(phase);
+	out += expf(-t * 0.003f) * rand(phase);
 	
     return out;
 }
 
 static float saw(float t, float phase)
 {
-	return sfract(phase / TAU) * 2.0f * 0.2f;
+	return sfract(phase / TAU) * 2.0f * 0.1f;
 }
 
 static float lead(float t, float phase)
@@ -184,7 +184,7 @@ static float lead(float t, float phase)
 	float out = saw(t, phase) + saw(t, phase * 1.02f) * t * 0.00004f;
 	out += sin(phase);
 	
-    return adsr * out * 0.25f;
+    return adsr * out * 0.7f;
 }
 
 static float snare(float t, float phase)
@@ -240,13 +240,12 @@ static float reese(float t, float phase)
     return adsr * 0.5f * out;
 }
 
-#define NOISE_VOLUME_DIVIDER 32.0f
 static float noise(float t, float phase)
 {
-	float adsr = expf(-phase * 0.01f);
+	float adsr = expf(-phase * 0.006f);
 	float out = adsr * rand(phase);
 	
-    return out / NOISE_VOLUME_DIVIDER;
+    return out * 0.2f;
 }
 
 Instrument instruments[] = {
@@ -256,6 +255,8 @@ Instrument instruments[] = {
     /* 3 */ lead,
     /* 4 */ snare,
     /* 5 */ pad,
+    /* 6 */ noise,
+    /* 7 */ saw,
 };
 
 #define CHANNELS 8
@@ -656,20 +657,155 @@ unsigned short patterns[][TRACKER_PATTERN_LENGTH * 2] = {
         0, 0,
         0, 0
     },
+	
+	// 19 - kick ramp up
+    {
+        NOTE(25), 0xc1,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(25), 0xc1,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(25), 0xc1,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(25), 0xc1,
+        0, 0,
+        NOTE(25), 0xc1,
+        0, 0,
+    },
+	
+	// 20 - snare ramp up
+    {
+        NOTE(25), 0xc4,
+        0, 0,
+        NOTE(25), 0xc4,
+        0, 0,
+        NOTE(28), 0xc4,
+        0, 0,
+        NOTE(25), 0xc4,
+        0, 0,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+        NOTE(25), 0xc4,
+    },
+	
+	// 21 - noise FX
+	{
+        NOTE(30), 0xe6,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+    },
+	
+	// 22 - saw saw saw
+    {
+        NOTE(13), 0xe7,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    },
+	
+	// 23 - saw saw saw 2
+    {
+        NOTE(16), 0xe7,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    },
+	
+	// 24 - saw saw saw 3
+    {
+        NOTE(15), 0xe7,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        NOTE(14), 0xe7,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    },
 };
 
 unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
-	// 0 - intro (32)
-    { 2, 3, 4, 5, 0, 0, 0, 0 },
-    { 0, 0, 0, 5, 0, 0, 0, 0 },
-    { 2, 3, 4, 5, 0, 0, 0, 0 },
-    { 0, 0, 0, 5, 0, 0, 0, 0 },
-    { 2, 3, 4, 5, 0, 0, 0, 0 },
-    { 0, 0, 0, 5, 0, 0, 0, 0 },
-    { 2, 3, 4, 5, 0, 0, 0, 0 },
-    { 0, 0, 0, 5, 0, 0, 0, 0 },
+    /*{ 22, 0, 0, 0, 0, 0, 0, 0 },
+    { 22, 0, 0, 0, 0, 0, 0, 0 },
+    { 22, 0, 0, 0, 0, 0, 0, 0 },
+    { 22, 0, 0, 0, 0, 0, 0, 0 },*/
 	
-	// bass
+	// 0 - pre-intro (32)
+    { 0, 0, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 4, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0 },
+    { 0, 0, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 20, 21, 0, 0, 0 },
+	
+	// 32 - intro (32)
+    { 2, 3, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0 },
+    { 2, 3, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0 },
+    { 2, 3, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 0, 0, 0, 0 },
+    { 2, 3, 4, 5, 0, 0, 0, 0 },
+    { 0, 0, 0, 5, 21, 0, 0, 0 },
+	
+	// 64 - bass (32)
     { 2, 6, 4, 5, 0, 0, 0, 0 },
     { 0, 0, 0, 5, 7, 8, 0, 0 },
     { 2, 6, 0, 5, 0, 0, 0, 0 },
@@ -677,9 +813,9 @@ unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
     { 2, 6, 4, 5, 0, 0, 0, 0 },
     { 0, 0, 0, 5, 7, 8, 0, 0 },
     { 2, 6, 0, 5, 0, 0, 0, 0 },
-    { 0, 0, 0, 5, 9, 10, 0, 0 },
+    { 0, 0, 0, 5, 9, 10, 21, 0 },
 	
-	// weird
+	// 96 - weird (32)
     { 2, 6, 4, 5, 11, 12, 0, 0 },
     { 0, 0, 0, 5, 13, 14, 0, 0 },
     { 2, 6, 0, 5, 11, 12, 0, 0 },
@@ -687,17 +823,28 @@ unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
     { 2, 6, 4, 5, 11, 12, 0, 0 },
     { 0, 0, 0, 5, 13, 14, 0, 0 },
     { 2, 6, 0, 5, 11, 12, 0, 0 },
-    { 0, 0, 0, 5, 13, 14, 0, 0 },
+    { 19, 0, 0, 20, 13, 14, 21, 0 },
 	
-	// break
-    { 15, 16, 17, 4, 0, 0, 0, 0 },
+	// 128 - break (64)
+    { 15, 16, 17, 4, 22, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
-    { 15, 16, 17, 4, 0, 0, 0, 0 },
+    { 15, 16, 17, 4, 23, 0, 0, 0 },
+    { 15, 16, 17, 0, 0, 0, 0, 0 },
+    { 15, 16, 17, 0, 24, 0, 0, 0 },
+    { 15, 16, 17, 0, 0, 0, 21, 0 },
+	
+    { 15, 16, 17, 4, 22, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
     { 15, 16, 17, 0, 0, 0, 0, 0 },
+    { 15, 16, 17, 4, 23, 0, 0, 0 },
+    { 15, 16, 17, 0, 0, 0, 0, 0 },
+    { 15, 16, 17, 0, 24, 0, 0, 0 },
+    { 15, 16, 17, 0, 0, 0, 21, 0 },
+	
+	// 192
 };
 
 static __forceinline void renderAudio()
@@ -730,7 +877,7 @@ static __forceinline void renderAudio()
                 {
 					float t = (float)channels[j].frame;
 					float phase = TAU * t / (float)channels[j].period;
-					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.5f;
+					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.3f;
                     short s = (short)(sf * 32767.0f);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
