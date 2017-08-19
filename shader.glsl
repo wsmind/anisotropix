@@ -18,6 +18,8 @@ float radius_animation;
 float starlights_visible;
 float cogs_visible;
 
+float iteration_animation;
+
 vec2 rotate(vec2 uv, float a)
 {
 	return mat2(cos(a), sin(a), -sin(a), cos(a)) * uv;
@@ -237,13 +239,14 @@ void main(void)
 	radius_animation = smoothstep(60.0,64.0,_u[0]);
 	starlights_visible = smoothstep(56.0, 64.0, _u[0]);
 	cogs_visible = step(128.0, _u[0]);
+	iteration_animation = smoothstep(250.0, 256.0, _u[0]);
 	
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
-	crazy_radius = mix(1.9, 1.4, pow(lead_pulse,1./4.))*(1.-radius_animation)+smoothstep(188.0,192.0,_u[0]);
+	crazy_radius = mix(1.9, 1.4, pow(lead_pulse,1./4.))*(1.-radius_animation)+smoothstep(188.0,192.0,_u[0])*2.-iteration_animation*2.;
 	crazy_corner = 0.7;
-	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0));
+	arm_iteration = int(mix((clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0)), clamp(pow(lead_pulse,1./3.),1.0,8.0),iteration_animation));
 	arm_rotation = sin(_u[0]/4.);
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
