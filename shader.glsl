@@ -223,9 +223,9 @@ void main(void)
 	//crazy_radius = sin(_u[0]);
 	//crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	//arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 6.0));
-	crazy_radius = sin(_u[0]/2.)+1.9;
+	crazy_radius = mix(1.4,0.8,pow(lead_pulse,1./4.));
 	crazy_corner = 0.7;
-	arm_iteration = 5;
+	arm_iteration = int(clamp(floor(_u[0] * 10.0 / 64.0), 1.0, 8.0));
 	arm_rotation = sin(_u[0]);
 	
 	vec2 uv = vec2(gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
