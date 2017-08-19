@@ -10,6 +10,8 @@ float crazy_radius;
 float arm_rotation;
 int arm_iteration;
 
+float lead_pulse;
+
 vec2 rotate(vec2 uv, float a)
 {
 	return mat2(cos(a), sin(a), -sin(a), cos(a)) * uv;
@@ -229,6 +231,8 @@ vec3 tonemap(vec3 color)
 
 void main(void)
 {
+	lead_pulse = exp(-mod(_u[0] - 2.0, 8.0) * 2.0);
+	
 	crazy_radius = clamp(sin(_u[0]) * 0.7, 0.1, 0.7);
 	crazy_corner = clamp(sin(_u[0]) * 0.7, 0.5, 0.95);
 	arm_rotation = sin(_u[0]);
@@ -251,7 +255,7 @@ void main(void)
 	vec3 lightOctopus = 0.6 * vec3(0.4, 7.0, 1.2) * light(pos, n, frac_octopus(pos), 0.1);
 	vec3 lightPanels = vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
-    vec3 radiance = lightOctopus + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
+    vec3 radiance = lightOctopus * lead_pulse + lightPanels + occlusion * vec3(0.001, 0.002, 0.002);
     
     float fog = exp(min((-pos.z + 2.0), 0.0) * 0.1);
     radiance = mix(vec3(0.0), radiance, fog);
