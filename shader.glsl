@@ -73,7 +73,7 @@ float cog(vec3 pos, float id)
     float d = torus(pos, vec2(2.0, 0.3));
 	float index;
     pos.xy = moda(pos.xy, 4.0 + floor(id * 6.0), index);
-    pos.x -= 1.7 / displacement;
+    pos.x -= 1.7 / (1.0 - displacement);
     return min(d, box(pos, vec3(0.45, 0.3, 0.04)));
 }
 
