@@ -96,11 +96,12 @@ float sphere(vec3 pos, float radius)
 
 float frac_octopus(vec3 pos)
 {
-	pos.xy = rotate(pos.xy, sin(_u[0]));
+	pos.xy = rotate(pos.xy, _u[0]*0.7+tan((_u[0]-16.)*PI/32.)*0.05);
+	pos.xz = rotate(pos.xz,sin(_u[0]));
     pos = abs(pos);
     float corner = 0.5;
     float c = box(pos,vec3(corner));
-    for (int i=0; i<10; i++)
+    for (int i=0; i<6; i++)
     {
         pos = pos-vec3(corner);
         corner *= 0.6;
@@ -155,7 +156,7 @@ float map(vec3 pos)
     //pos.yz = rotate(pos.yz, _u[0]);
     //return min(cogs(pos), -length(pos.xy) + 5.0);
     //return cogs(pos);
-	
+	//return frac_octopus(pos);
     return min(min(min(min(cogs(pos), panels(pos)), panels2(pos)), 8.0 - length(pos.xy)),frac_octopus(pos));
 }
 
@@ -216,7 +217,7 @@ void main(void)
 	vec3 dir = normalize(vec3(uv, 0.5 - length(uv) * 0.4));
 	vec3 pos = vec3(0.0, 0.0, -2.0);
 	
-	for (int i = 0; i < 60; i++)
+	for (int i = 0; i < 70; i++)
 	{
 		float d = map(pos);
 		if (d < 0.001) break;
