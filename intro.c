@@ -512,8 +512,7 @@ void entry()
         float time;
         
 		// avoid 'not responding' system messages
-		MSG msg;
-		PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
+		PeekMessage(NULL, NULL, 0, 0, PM_REMOVE);
 		
 #ifdef CAPTURE_FRAMES
         // capture at a steady 60fps
