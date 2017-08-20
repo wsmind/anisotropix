@@ -281,7 +281,7 @@ void main(void)
 	vec3 lightPanels2 = starlights_visible * vec3(3.0, 0.4, 3.0) * light(pos, n, panels2(pos), 0.1);
     
     vec3 radiance = lightOctopus + lightPanels + lightPanels2 + occlusion * vec3(0.001, 0.002, 0.002);
-    vec3 radiance2 = occlusion;
+    vec3 radiance2 = vec3(occlusion);
 	
 	//float luminance = dot(radiance, vec3(0.3, 0.59, 0.11));
 	radiance = mix(radiance, radiance2, wtf);
