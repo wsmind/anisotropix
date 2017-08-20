@@ -70,7 +70,7 @@ float torus(vec3 pos, vec2 radiuses)
 
 float cog(vec3 pos, float id)
 {
-	float displacement = step(192, _u[0]) * step(0.0, 256.0 - _u[0]) * mod(_u[0], 64.0) / 64.0;
+	float displacement = step(192.0, _u[0]) * step(0.0, 256.0 - _u[0]) * mod(_u[0], 64.0) / 64.0;
 	
 	pos.xy += 1.5 * displacement * vec2(rand(id), rand(id + 17.0));
 	
