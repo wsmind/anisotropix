@@ -915,6 +915,15 @@ unsigned char song[TRACKER_SONG_LENGTH][CHANNELS] = {
     { 0, 1, 1, 1, 1, 1, 1, 1 },
 };
 
+static void accumulateSample(short *buffer, short sample)
+{
+	int sum = (int)*buffer + (int)sample;
+	if (sum > 32767) sum = 32767;
+	if (sum < -32768) sum = -32768;
+	
+	*buffer = sum;
+}
+
 static __forceinline void renderAudio()
 {
     int i, j, k, l, delay;
@@ -946,15 +955,17 @@ static __forceinline void renderAudio()
 					float t = (float)channels[j].frame;
 					float phase = TAU * t / (float)channels[j].period;
 					float sf = instruments[channels[j].instrument & 0x0f](t, phase) * 0.3f;
+					if (sf < -1.0f) sf = -1.0f;
+					if (sf > 1.0f) sf = 1.0f;
                     short s = (short)(sf * 32767.0f);
                     short l = (channels[j].instrument & 0x80) ? s : 0;
                     short r = (channels[j].instrument & 0x40) ? s : 0;
                     
-                    *periodBuffer++ += l;
-                    *periodBuffer++ += r;
+					accumulateSample(periodBuffer++, l);
+					accumulateSample(periodBuffer++, r);
                     
-                    *auxPeriodBuffer++ += (channels[j].instrument & 0x20) ? l : 0;
-                    *auxPeriodBuffer++ += (channels[j].instrument & 0x20) ? r : 0;
+					accumulateSample(auxPeriodBuffer++, (channels[j].instrument & 0x20) ? l : 0);
+					accumulateSample(auxPeriodBuffer++, (channels[j].instrument & 0x20) ? r : 0);
                     
                     if (!(channels[j].frame % 1000) && (channels[j].instrument & 0x10))
                         channels[j].period++;
@@ -972,12 +983,12 @@ static __forceinline void renderAudio()
     for (buffer = audioBuffer + 22, aux = auxBuffer + DELAY_LEFT + DELAY_RIGHT; aux != auxBuffer + AUDIO_SAMPLES + DELAY_LEFT + DELAY_RIGHT;)
     {
         short s = aux[-delay] * 3 / 4;
-        *aux += s;
+		accumulateSample(aux, s);
         
         delay ^= DELAY_LEFT;
         delay ^= DELAY_RIGHT;
         
-        *buffer++ += *aux++;
+		accumulateSample(buffer++, *aux++);
     }
 }
 
